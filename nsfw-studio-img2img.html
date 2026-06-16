@@ -23,63 +23,44 @@
 
             <div class="mb-6">
                 <label class="block text-xs uppercase tracking-widest text-zinc-400 mb-2">Dein Prompt</label>
-                <textarea id="prompt" rows="4" class="w-full bg-zinc-800 border border-zinc-700 rounded-3xl p-5 focus:border-rose-500 focus:outline-none" 
+                <textarea id="prompt" rows="4" class="w-full bg-zinc-800 border border-zinc-700 rounded-3xl p-5 focus:border-rose-500" 
                     placeholder="beautiful nude young woman, detailed skin, sensual pose..."></textarea>
             </div>
 
-            <div class="space-y-4">
-                <button onclick="usePrompt()" 
-                        class="w-full py-4 bg-zinc-800 hover:bg-zinc-700 rounded-3xl text-sm font-medium">
-                    Prompt in Generator übernehmen
-                </button>
+            <button onclick="copyPrompt()" 
+                    class="w-full py-4 bg-zinc-800 hover:bg-zinc-700 rounded-3xl mb-8">
+                Prompt kopieren &amp; in Generator einfügen
+            </button>
 
-                <div class="pt-4 border-t border-zinc-700">
-                    <p class="text-xs uppercase text-zinc-500 mb-3">NSFW Prompt-Vorschläge</p>
-                    <div id="suggestions" class="space-y-2 text-sm"></div>
-                </div>
-            </div>
-
-            <div class="mt-auto pt-8 text-xs text-zinc-500">
-                <p>1. Prompt im Generator eingeben<br>
-                   2. Bilder generieren<br>
-                   3. Bild-URL kopieren → „In Galerie hinzufügen“</p>
-            </div>
+            <h3 class="text-xs uppercase text-zinc-500 mb-3">NSFW Prompt-Vorschläge</h3>
+            <div id="suggestions" class="space-y-2"></div>
         </div>
 
-        <!-- Perchance Generator -->
+        <!-- Generator -->
         <div class="flex-1 flex flex-col">
-            <div class="bg-zinc-900 border-b border-zinc-800 p-4 flex items-center justify-between">
+            <div class="bg-zinc-900 border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
                 <h2 class="font-semibold">Perchance AI Image Generator</h2>
-                <a href="https://perchance.org/ai-text-to-image-generator" target="_blank" 
-                   class="text-rose-400 hover:text-rose-300 text-sm flex items-center gap-2">
-                    <i class="fas fa-external-link-alt"></i> Perchance öffnen
+                <a href="https://perchance.org/ai-photo-generator" target="_blank" class="text-rose-400 text-sm flex items-center gap-2">
+                    <i class="fas fa-external-link-alt"></i> Direkt öffnen
                 </a>
             </div>
-            
-            <iframe id="perchance-iframe" 
-                    src="https://perchance.org/ai-text-to-image-generator"
-                    class="flex-1 w-full border-0" 
-                    allowfullscreen></iframe>
+            <iframe src="https://perchance.org/ai-photo-generator" 
+                    class="flex-1 w-full border-0" allowfullscreen></iframe>
         </div>
 
         <!-- Galerie -->
         <div class="w-96 bg-zinc-900 border-l border-zinc-800 flex flex-col">
             <div class="p-6 border-b border-zinc-800">
-                <h2 class="font-semibold flex items-center gap-2">
-                    <i class="fas fa-images"></i> Meine Galerie
-                </h2>
+                <h2 class="font-semibold">Meine Galerie</h2>
             </div>
+            <div id="gallery" class="flex-1 p-6 overflow-auto grid grid-cols-2 gap-4"></div>
             
-            <div id="gallery" class="flex-1 p-6 overflow-auto grid grid-cols-2 gap-4">
-                <!-- Bilder werden hier per JS hinzugefügt -->
-            </div>
-
             <div class="p-6 border-t border-zinc-800">
                 <input id="image-url" type="text" placeholder="Bild-URL hier einfügen" 
                        class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl p-4 text-sm mb-3">
                 <button onclick="addToGallery()" 
                         class="w-full py-4 bg-rose-600 hover:bg-rose-500 rounded-3xl font-medium">
-                    Bild zur Galerie hinzufügen
+                    Zur Galerie hinzufügen
                 </button>
             </div>
         </div>
@@ -87,60 +68,47 @@
 
     <script>
         const suggestions = [
-            "beautiful nude young woman, long hair, sensual pose, detailed skin texture, soft lighting, photorealistic, 8k",
-            "nude asian girl lying on silk sheets, seductive look, perfect body, cinematic lighting",
-            "elegant nude woman in moonlight, artistic, highly detailed, realistic skin",
-            "curvy nude redhead, bedroom setting, warm lighting, detailed anatomy"
+            "beautiful nude young woman, long hair, sensual pose, detailed skin texture, soft cinematic lighting, photorealistic",
+            "nude asian girl lying on silk sheets, seductive expression, perfect body, warm lighting",
+            "elegant nude woman standing in moonlight, artistic nude, highly detailed, realistic skin",
+            "curvy redhead nude, bedroom setting, soft volumetric lighting, masterpiece"
         ];
 
         function initSuggestions() {
             const container = document.getElementById('suggestions');
             suggestions.forEach(text => {
                 const btn = document.createElement('button');
-                btn.className = "w-full text-left p-3 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-sm transition-colors";
-                btn.textContent = text.length > 65 ? text.substring(0, 62) + "..." : text;
-                btn.onclick = () => {
-                    document.getElementById('prompt').value = text;
-                };
+                btn.className = "w-full text-left p-3.5 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-sm transition-all";
+                btn.textContent = text.length > 70 ? text.substring(0,67)+'...' : text;
+                btn.onclick = () => document.getElementById('prompt').value = text;
                 container.appendChild(btn);
             });
         }
 
-        function usePrompt() {
+        function copyPrompt() {
             const prompt = document.getElementById('prompt').value.trim();
             if (prompt) {
-                alert("✅ Prompt kopiert! Füge ihn jetzt im Perchance-Generator ein.");
-                // Manuell kopieren (besser geht es leider nicht wegen Cross-Origin)
                 navigator.clipboard.writeText(prompt);
+                alert("✅ Prompt kopiert! Füge ihn im Generator ein.");
             }
         }
 
         function addToGallery() {
-            const url = document.getElementById('image-url').value.trim();
-            if (!url) return alert("Bitte eine Bild-URL einfügen");
+            const urlInput = document.getElementById('image-url');
+            const url = urlInput.value.trim();
+            if (!url) return alert("Bitte eine gültige Bild-URL einfügen");
 
             const gallery = document.getElementById('gallery');
-            const div = document.createElement('div');
-            div.className = "relative group rounded-3xl overflow-hidden border border-zinc-700 hover:border-rose-500";
-            div.innerHTML = `
-                <img src="${url}" class="w-full aspect-square object-cover">
-                <div class="absolute bottom-2 right-2 flex gap-2">
-                    <button onclick="this.closest('div').remove()" 
-                            class="bg-black/70 hover:bg-red-600 text-xs px-3 py-1 rounded-xl">✕</button>
-                    <button onclick="window.open('${url}', '_blank')" 
-                            class="bg-black/70 hover:bg-white hover:text-black text-xs px-3 py-1 rounded-xl">↓</button>
-                </div>
+            const item = document.createElement('div');
+            item.className = "relative group rounded-3xl overflow-hidden border border-zinc-700 hover:border-rose-500";
+            item.innerHTML = `
+                <img src="\( {url}" class="w-full aspect-square object-cover cursor-pointer" onclick="window.open(' \){url}', '_blank')">
+                <button onclick="this.parentElement.remove()" 
+                        class="absolute top-2 right-2 bg-black/70 hover:bg-red-600 px-2 py-1 text-xs rounded-xl">✕</button>
             `;
-            gallery.prepend(div);
-            document.getElementById('image-url').value = '';
+            gallery.prepend(item);
+            urlInput.value = '';
         }
-
-        // Tastatur-Support
-        document.addEventListener('keydown', (e) => {
-            if (e.key === "Enter" && document.getElementById('image-url') === document.activeElement) {
-                addToGallery();
-            }
-        });
 
         window.onload = initSuggestions;
     </script>

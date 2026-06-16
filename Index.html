@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NSFW Studio • Unzensierter Bildgenerator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', system_ui, sans-serif; }
+        .title { font-family: 'Space Grotesk', sans-serif; }
+        .prompt-input { resize: vertical; min-height: 120px; }
+        .generated-img { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .generated-img:hover { transform: scale(1.04); box-shadow: 0 30px 60px -15px rgb(0 0 0 / 0.5); }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen">
+    <div class="max-w-screen-2xl mx-auto">
+        <!-- Header -->
+        <header class="border-b border-zinc-800 bg-zinc-900 py-5 px-8 flex items-center justify-between sticky top-0 z-50">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-gradient-to-br from-rose-500 via-purple-600 to-violet-500 rounded-3xl flex items-center justify-center text-2xl">🔥</div>
+                <div>
+                    <h1 class="title text-4xl font-bold tracking-tighter">NSFW Studio</h1>
+                    <p class="text-rose-400 text-sm font-medium">Unzensiert • Nackt • Explizit</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-6">
+                <div id="nsfw-status" onclick="toggleNSFW()" 
+                     class="flex items-center gap-2 px-6 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-3xl cursor-pointer transition-all border border-rose-500">
+                    <i class="fas fa-exclamation-triangle text-rose-500"></i>
+                    <span class="font-semibold text-rose-400">NSFW + Nackt aktiviert</span>
+                </div>
+                <button onclick="clearAll()" class="px-5 py-3 text-zinc-400 hover:text-white flex items-center gap-2">
+                    <i class="fas fa-trash"></i> Galerie leeren
+                </button>
+            </div>
+        </header>
+
+        <div class="flex">
+            <!-- Controls -->
+            <div class="w-96 bg-zinc-900 border-r border-zinc-800 p-8 overflow-auto h-screen">
+                <div class="space-y-8">
+                    <div>
+                        <label class="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Dein Prompt</label>
+                        <textarea id="prompt" class="prompt-input w-full bg-zinc-800 border border-zinc-700 rounded-3xl p-6 text-lg focus:border-rose-500 focus:outline-none" 
+                            placeholder="Eine nackte Frau mit langen schwarzen Haaren, sinnliche Pose, detaillierte Haut, realistisch, 8k..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs uppercase tracking-widest text-zinc-500 mb-3">Negative Prompt (optional)</label>
+                        <textarea id="negative" rows="2" class="w-full bg-zinc-800 border border-zinc-700 rounded-3xl p-5 text-sm"
+                            placeholder="verpixelt, hässlich, Kleidung, Text, Wasserzeichen, Kind..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs uppercase tracking-widest text-zinc-500 mb-3">Stil</label>
+                        <div class="grid grid-cols-3 gap-3 text-center" id="styles"></div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs uppercase tracking-widest text-zinc-500 mb-3">Format</label>
+                        <div class="flex gap-2 flex-wrap" id="ratios"></div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs uppercase tracking-widest text-zinc-500 mb-3">Qualität</label>
+                        <select id="quality" class="w-full bg-zinc-800 border border-zinc-700 rounded-3xl p-5">
+                            <option value="ultra">Ultra Detail (Nackt / Realistisch)</option>
+                            <option value="high" selected>Hoch (Empfohlen)</option>
+                            <option value="medium">Medium</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button onclick="generate()" 
+                        class="mt-12 w-full py-8 text-2xl font-semibold bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 rounded-3xl flex items-center justify-center gap-4 active:scale-95 transition-all">
+                    <i class="fas fa-wand-magic-sparkles"></i>
+                    <span>Bild generieren</span>
+                </button>
+            </div>
+
+            <!-- Main Area -->
+            <div class="flex-1 p-10">
+                <!-- Preview -->
+                <div id="preview" class="bg-zinc-900 border border-zinc-800 rounded-3xl h-[520px] flex items-center justify-center relative overflow-hidden mb-12">
+                    <div id="preview-content" class="text-center">
+                        <i class="fas fa-image text-9xl text-zinc-700 mb-6"></i>
+                        <p class="text-xl text-zinc-400">Prompt eingeben und generieren</p>
+                    </div>
+                    <div id="loading" class="hidden absolute inset-0 bg-black/90 flex items-center justify-center">
+                        <div class="text-center">
+                            <div class="w-20 h-20 border-4 border-zinc-600 border-t-rose-500 rounded-full animate-spin mx-auto mb-8"></div>
+                            <p class="text-rose-400 font-medium">Generiere explizites Bild...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gallery -->
+                <h2 class="text-2xl font-semibold mb-6 flex items-center gap-3">
+                    <span>Generierte Bilder</span> 
+                    <span id="count" class="text-sm font-normal text-zinc-400">(0)</span>
+                </h2>
+                <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let images = [];
+        let nsfwEnabled = true;
+
+        const styles = ["Realistisch", "Fotorealistisch", "Anime", "Fantasy", "Ölmalerei", "Erotisch", "Hyperreal"];
+        const ratios = ["1:1", "16:9", "9:16", "4:5", "5:4"];
+
+        function init() {
+            // Styles
+            const styleDiv = document.getElementById('styles');
+            styles.forEach(s => {
+                const el = document.createElement('div');
+                el.className = `bg-zinc-800 hover:bg-zinc-700 p-4 rounded-3xl cursor-pointer text-sm font-medium transition-all ${s === "Erotisch" ? 'ring-2 ring-rose-500' : ''}`;
+                el.textContent = s;
+                styleDiv.appendChild(el);
+            });
+
+            // Ratios
+            const ratioDiv = document.getElementById('ratios');
+            ratios.forEach(r => {
+                const el = document.createElement('button');
+                el.className = `px-6 py-3 rounded-3xl text-sm ${r === "9:16" ? 'bg-rose-600' : 'bg-zinc-800 hover:bg-zinc-700'}`;
+                el.textContent = r;
+                ratioDiv.appendChild(el);
+            });
+        }
+
+        function toggleNSFW() {
+            nsfwEnabled = !nsfwEnabled;
+            const status = document.getElementById('nsfw-status');
+            if (nsfwEnabled) {
+                status.innerHTML = `<i class="fas fa-exclamation-triangle text-rose-500"></i><span class="font-semibold text-rose-400">NSFW + Nackt aktiviert</span>`;
+            } else {
+                status.innerHTML = `<i class="fas fa-shield"></i><span class="font-medium">NSFW deaktiviert</span>`;
+            }
+        }
+
+        function generate() {
+            const prompt = document.getElementById('prompt').value.trim();
+            if (!prompt) {
+                alert("Bitte gib einen Prompt ein (z.B. eine nackte Frau...)");
+                return;
+            }
+
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('preview-content').classList.add('hidden');
+
+            setTimeout(() => {
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('preview-content').classList.remove('hidden');
+
+                const seed = Math.floor(Math.random() * 100000);
+                const url = `https://picsum.photos/id/${seed}/800/1000`;
+
+                const newImage = { url, prompt: prompt.substring(0, 80) + (prompt.length > 80 ? '...' : ''), time: new Date().toLocaleTimeString() };
+                images.unshift(newImage);
+                renderGallery();
+
+                // Show in preview
+                document.getElementById('preview-content').innerHTML = `
+                    <img src="${url}" class="max-h-full max-w-full rounded-3xl shadow-2xl generated-img object-contain">
+                    <div class="absolute bottom-6 left-6 right-6 bg-black/70 backdrop-blur p-4 rounded-3xl text-sm">
+                        ${prompt}
+                    </div>
+                `;
+
+            }, 1400);
+        }
+
+        function renderGallery() {
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+            document.getElementById('count').textContent = `(${images.length})`;
+
+            images.forEach(img => {
+                const div = document.createElement('div');
+                div.className = "group relative bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800 hover:border-rose-500 cursor-pointer";
+                div.innerHTML = `
+                    <img src="${img.url}" class="w-full aspect-[4/5] object-cover generated-img">
+                    <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 p-4">
+                        <p class="text-xs line-clamp-2 text-zinc-300">${img.prompt}</p>
+                        <button onclick="event.stopImmediatePropagation(); download('${img.url}')" 
+                                class="mt-3 text-xs bg-white/10 hover:bg-white/20 px-5 py-2 rounded-2xl w-full">Herunterladen</button>
+                    </div>
+                `;
+                div.onclick = () => showFull(img);
+                gallery.appendChild(div);
+            });
+        }
+
+        function download(url) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `nsfw-${Date.now()}.jpg`;
+            a.click();
+        }
+
+        function showFull(img) {
+            const modal = document.createElement('div');
+            modal.className = "fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4";
+            modal.innerHTML = `
+                <div class="max-w-3xl w-full">
+                    <img src="${img.url}" class="rounded-3xl max-h-[85vh] mx-auto shadow-2xl">
+                    <div class="text-center mt-6">
+                        <p class="text-zinc-400 max-w-md mx-auto">${img.prompt}</p>
+                        <button onclick="this.closest('.fixed').remove()" class="mt-8 px-10 py-4 bg-zinc-800 hover:bg-zinc-700 rounded-3xl">Schließen</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function clearAll() {
+            if (confirm("Alle Bilder löschen?")) {
+                images = [];
+                renderGallery();
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

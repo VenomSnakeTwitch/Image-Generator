@@ -9,74 +9,140 @@
     <style>
         body { font-family: 'Inter', system_ui, sans-serif; }
         .title { font-family: 'Space Grotesk', sans-serif; }
-        iframe { border-radius: 20px; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4); }
+        iframe { border-radius: 16px; }
     </style>
 </head>
 <body class="bg-zinc-950 text-zinc-100 min-h-screen">
-    <div class="max-w-screen-2xl mx-auto">
-        <header class="border-b border-zinc-800 bg-zinc-900 py-6 px-8 flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <div class="w-11 h-11 bg-gradient-to-br from-rose-500 to-purple-600 rounded-3xl flex items-center justify-center text-3xl">🔥</div>
-                <div>
-                    <h1 class="title text-4xl font-bold tracking-tighter">NSFW Studio</h1>
-                    <p class="text-rose-400 text-sm">Perchance AI • Kostenlos & Unzensiert</p>
+    <div class="max-w-screen-2xl mx-auto flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-96 bg-zinc-900 border-r border-zinc-800 p-6 overflow-auto">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="w-10 h-10 bg-gradient-to-br from-rose-500 to-purple-600 rounded-2xl flex items-center justify-center text-2xl">🔥</div>
+                <h1 class="title text-3xl font-bold">NSFW Studio</h1>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-xs uppercase tracking-widest text-zinc-400 mb-2">Dein Prompt</label>
+                <textarea id="prompt" rows="4" class="w-full bg-zinc-800 border border-zinc-700 rounded-3xl p-5 focus:border-rose-500 focus:outline-none" 
+                    placeholder="beautiful nude young woman, detailed skin, sensual pose..."></textarea>
+            </div>
+
+            <div class="space-y-4">
+                <button onclick="usePrompt()" 
+                        class="w-full py-4 bg-zinc-800 hover:bg-zinc-700 rounded-3xl text-sm font-medium">
+                    Prompt in Generator übernehmen
+                </button>
+
+                <div class="pt-4 border-t border-zinc-700">
+                    <p class="text-xs uppercase text-zinc-500 mb-3">NSFW Prompt-Vorschläge</p>
+                    <div id="suggestions" class="space-y-2 text-sm"></div>
                 </div>
             </div>
-            <a href="https://perchance.org/ai-text-to-image-generator" target="_blank"
-               class="text-sm px-5 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-3xl flex items-center gap-2">
-                <i class="fas fa-external-link-alt"></i> Direkt zu Perchance
-            </a>
-        </header>
 
-        <div class="p-8">
-            <!-- Info -->
-            <div class="max-w-4xl mx-auto text-center mb-10">
-                <div class="inline-flex items-center gap-2 bg-zinc-900 border border-rose-500/30 px-6 py-3 rounded-3xl text-sm">
-                    <i class="fas fa-check text-emerald-400"></i>
-                    <span>Kostenlos • Kein Login • Unbegrenzt • NSFW möglich</span>
-                </div>
+            <div class="mt-auto pt-8 text-xs text-zinc-500">
+                <p>1. Prompt im Generator eingeben<br>
+                   2. Bilder generieren<br>
+                   3. Bild-URL kopieren → „In Galerie hinzufügen“</p>
+            </div>
+        </div>
+
+        <!-- Perchance Generator -->
+        <div class="flex-1 flex flex-col">
+            <div class="bg-zinc-900 border-b border-zinc-800 p-4 flex items-center justify-between">
+                <h2 class="font-semibold">Perchance AI Image Generator</h2>
+                <a href="https://perchance.org/ai-text-to-image-generator" target="_blank" 
+                   class="text-rose-400 hover:text-rose-300 text-sm flex items-center gap-2">
+                    <i class="fas fa-external-link-alt"></i> Perchance öffnen
+                </a>
+            </div>
+            
+            <iframe id="perchance-iframe" 
+                    src="https://perchance.org/ai-text-to-image-generator"
+                    class="flex-1 w-full border-0" 
+                    allowfullscreen></iframe>
+        </div>
+
+        <!-- Galerie -->
+        <div class="w-96 bg-zinc-900 border-l border-zinc-800 flex flex-col">
+            <div class="p-6 border-b border-zinc-800">
+                <h2 class="font-semibold flex items-center gap-2">
+                    <i class="fas fa-images"></i> Meine Galerie
+                </h2>
+            </div>
+            
+            <div id="gallery" class="flex-1 p-6 overflow-auto grid grid-cols-2 gap-4">
+                <!-- Bilder werden hier per JS hinzugefügt -->
             </div>
 
-            <!-- Embedded Generator -->
-            <div class="max-w-5xl mx-auto bg-zinc-900 rounded-3xl p-4 border border-zinc-700">
-                <iframe id="perchance-frame" 
-                        src="https://perchance.org/ai-text-to-image-generator"
-                        width="100%" height="720" 
-                        frameborder="0" allowfullscreen></iframe>
-            </div>
-
-            <div class="text-center mt-8 text-zinc-400 text-sm">
-                Tipp: Verwende detaillierte Prompts wie:<br>
-                <span class="text-rose-400">"beautiful nude young woman, detailed skin, sensual pose, long hair, cinematic lighting, photorealistic"</span>
-            </div>
-
-            <!-- Alternative Generatoren -->
-            <div class="max-w-5xl mx-auto mt-16">
-                <h2 class="text-2xl font-semibold mb-6 text-center">Weitere starke Perchance NSFW-Generatoren</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <a href="https://perchance.org/ai-text-to-image-generator" target="_blank" 
-                       class="block bg-zinc-900 p-6 rounded-3xl hover:bg-zinc-800 transition-colors">
-                        <h3 class="font-semibold text-lg mb-2">AI Text to Image (Standard)</h3>
-                        <p class="text-zinc-400 text-sm">Allgemein + gut für NSFW</p>
-                    </a>
-                    <a href="https://perchance.org/text-to-image" target="_blank" 
-                       class="block bg-zinc-900 p-6 rounded-3xl hover:bg-zinc-800 transition-colors">
-                        <h3 class="font-semibold text-lg mb-2">AI Art Studio</h3>
-                        <p class="text-zinc-400 text-sm">Viele Styles, sehr kreativ</p>
-                    </a>
-                    <a href="https://perchance.org/imageinimage" target="_blank" 
-                       class="block bg-zinc-900 p-6 rounded-3xl hover:bg-zinc-800 transition-colors">
-                        <h3 class="font-semibold text-lg mb-2">Image to Image</h3>
-                        <p class="text-zinc-400 text-sm">Bild hochladen → NSFW-Variante</p>
-                    </a>
-                </div>
+            <div class="p-6 border-t border-zinc-800">
+                <input id="image-url" type="text" placeholder="Bild-URL hier einfügen" 
+                       class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl p-4 text-sm mb-3">
+                <button onclick="addToGallery()" 
+                        class="w-full py-4 bg-rose-600 hover:bg-rose-500 rounded-3xl font-medium">
+                    Bild zur Galerie hinzufügen
+                </button>
             </div>
         </div>
     </div>
 
     <script>
-        // Automatisch auf NSFW-freundlichen Modus hinweisen
-        console.log("%cNSFW Studio mit Perchance AI gestartet", "color: #f43f5e; font-size: 14px;");
+        const suggestions = [
+            "beautiful nude young woman, long hair, sensual pose, detailed skin texture, soft lighting, photorealistic, 8k",
+            "nude asian girl lying on silk sheets, seductive look, perfect body, cinematic lighting",
+            "elegant nude woman in moonlight, artistic, highly detailed, realistic skin",
+            "curvy nude redhead, bedroom setting, warm lighting, detailed anatomy"
+        ];
+
+        function initSuggestions() {
+            const container = document.getElementById('suggestions');
+            suggestions.forEach(text => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-3 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-sm transition-colors";
+                btn.textContent = text.length > 65 ? text.substring(0, 62) + "..." : text;
+                btn.onclick = () => {
+                    document.getElementById('prompt').value = text;
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function usePrompt() {
+            const prompt = document.getElementById('prompt').value.trim();
+            if (prompt) {
+                alert("✅ Prompt kopiert! Füge ihn jetzt im Perchance-Generator ein.");
+                // Manuell kopieren (besser geht es leider nicht wegen Cross-Origin)
+                navigator.clipboard.writeText(prompt);
+            }
+        }
+
+        function addToGallery() {
+            const url = document.getElementById('image-url').value.trim();
+            if (!url) return alert("Bitte eine Bild-URL einfügen");
+
+            const gallery = document.getElementById('gallery');
+            const div = document.createElement('div');
+            div.className = "relative group rounded-3xl overflow-hidden border border-zinc-700 hover:border-rose-500";
+            div.innerHTML = `
+                <img src="${url}" class="w-full aspect-square object-cover">
+                <div class="absolute bottom-2 right-2 flex gap-2">
+                    <button onclick="this.closest('div').remove()" 
+                            class="bg-black/70 hover:bg-red-600 text-xs px-3 py-1 rounded-xl">✕</button>
+                    <button onclick="window.open('${url}', '_blank')" 
+                            class="bg-black/70 hover:bg-white hover:text-black text-xs px-3 py-1 rounded-xl">↓</button>
+                </div>
+            `;
+            gallery.prepend(div);
+            document.getElementById('image-url').value = '';
+        }
+
+        // Tastatur-Support
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Enter" && document.getElementById('image-url') === document.activeElement) {
+                addToGallery();
+            }
+        });
+
+        window.onload = initSuggestions;
     </script>
 </body>
 </html>

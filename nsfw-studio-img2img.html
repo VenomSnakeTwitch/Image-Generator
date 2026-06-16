@@ -10,7 +10,8 @@
         body { font-family: 'Inter', system_ui, sans-serif; }
         .title { font-family: 'Space Grotesk', sans-serif; }
         .dropzone { transition: all 0.3s; }
-        .dropzone.dragover { background-color: rgb(190 18 60 / 0.1); border-color: rgb(244 63 94); }
+        .dropzone.dragover { background-color: rgb(244 63 94 / 0.1); border-color: rgb(244 63 94); }
+        .generated-img { transition: all 0.4s; }
     </style>
 </head>
 <body class="bg-zinc-950 text-zinc-100 min-h-screen">
@@ -23,10 +24,11 @@
                     <p class="text-rose-400 text-sm">Text2Img + Img2Img • Unzensiert</p>
                 </div>
             </div>
-            <div onclick="toggleNSFW()" id="nsfw-btn"
-                 class="flex items-center gap-3 px-6 py-3 bg-zinc-800 rounded-3xl cursor-pointer border border-rose-500 hover:bg-zinc-700">
-                <i class="fas fa-exclamation-triangle text-rose-500"></i>
-                <span class="font-semibold text-rose-400">NSFW + Nackt aktiviert</span>
+            <div class="px-6 py-3 bg-zinc-800 rounded-3xl border border-rose-500">
+                <span class="font-semibold text-rose-400 flex items-center gap-2">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    NSFW + Nackt aktiviert
+                </span>
             </div>
         </header>
 
@@ -36,38 +38,193 @@
                 <div class="space-y-8">
                     <!-- Upload -->
                     <div>
-                        <label class="block text-xs uppercase tracking-widest text-zinc-500 mb-3">Referenzbild hochladen (Img2Img)</label>
-                        <div id="dropzone" 
-                             class="dropzone border-2 border-dashed border-zinc-700 hover:border-rose-400 rounded-3xl h-52 flex flex-col items-center justify-center cursor-pointer text-center p-6">
-                            <i class="fas fa-cloud-upload-alt text-4xl text-zinc-500 mb-3"></i>
+                        <label class="block text-xs uppercase tracking-widest text-zinc-500 mb-3">Referenzbild (Img2Img)</label>
+                        <div id="dropzone" class="dropzone border-2 border-dashed border-zinc-700 hover:border-rose-400 rounded-3xl h-52 flex flex-col items-center justify-center cursor-pointer">
+                            <i class="fas fa-cloud-upload-alt text-5xl text-zinc-500 mb-4"></i>
                             <p class="text-zinc-400">Bild hier ablegen oder klicken</p>
                             <input type="file" id="image-upload" accept="image/*" class="hidden">
                         </div>
-                        <div id="uploaded-preview" class="hidden mt-4">
-                            <img id="uploaded-img" class="w-full rounded-3xl border border-zinc-700">
-                            <button onclick="removeUploaded()" 
-                                    class="mt-3 text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1">
-                                <i class="fas fa-trash"></i> Bild entfernen
-                            </button>
+                        <div id="uploaded-preview" class="hidden mt-4 rounded-3xl overflow-hidden border border-zinc-700">
+                            <img id="uploaded-img" class="w-full">
+                            <button onclick="removeUploaded()" class="w-full py-2 text-rose-400 text-sm hover:bg-zinc-900">Bild entfernen</button>
                         </div>
                     </div>
 
                     <!-- Prompt -->
                     <div>
                         <label class="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Prompt</label>
-                        <textarea id="prompt" rows="4" 
-                            class="w-full bg-zinc-800 border border-zinc-700 rounded-3xl p-6 focus:border-rose-500 focus:outline-none"
-                            placeholder="Nackte Frau in sinnlicher Pose, bessere Beleuchtung, detaillierte Haut..."></textarea>
+                        <textarea id="prompt" rows="4" class="w-full bg-zinc-800 border border-zinc-700 rounded-3xl p-6 focus:border-rose-500" 
+                            placeholder="Nude asian adult girl, detailed skin, sensual pose, photorealistic..."></textarea>
                     </div>
 
+                    <!-- Strength -->
                     <div>
                         <label class="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Stärke des Referenzbildes</label>
-                        <input type="range" id="strength" min="0" max="100" value="65" 
-                               class="w-full accent-rose-500">
+                        <input type="range" id="strength" min="10" max="95" value="65" class="w-full accent-rose-500">
                         <div class="flex justify-between text-xs text-zinc-400 mt-1">
                             <span>Mehr Kreativität</span>
                             <span id="strength-value">65%</span>
                             <span>Stark am Original</span>
+                        </div>
+                    </div>
+
+                    <button onclick="generate()" 
+                            class="w-full py-7 text-xl font-semibold bg-gradient-to-r from-rose-600 via-purple-600 to-violet-600 rounded-3xl flex items-center justify-center gap-3 hover:brightness-110">
+                        <i class="fas fa-wand-magic-sparkles"></i>
+                        <span>Bild generieren</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Area -->
+            <div class="flex-1 p-10">
+                <div id="preview" class="bg-zinc-900 border border-zinc-800 rounded-3xl min-h-[560px] flex items-center justify-center relative overflow-hidden">
+                    <div id="preview-content" class="text-center">
+                        <i class="fas fa-image text-8xl text-zinc-700 mb-6"></i>
+                        <p class="text-zinc-400">Generiertes Bild wird hier angezeigt</p>
+                    </div>
+                    <div id="loading" class="hidden absolute inset-0 bg-black/80 flex items-center justify-center">
+                        <div class="text-center">
+                            <div class="w-16 h-16 border-4 border-zinc-600 border-t-rose-500 animate-spin rounded-full mx-auto mb-6"></div>
+                            <p class="text-rose-400">Bild wird generiert...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h2 class="mt-12 mb-6 text-2xl font-semibold">Generierte Bilder</h2>
+                <div id="gallery" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedImage = null;
+        let generatedImages = [];
+
+        function init() {
+            const dropzone = document.getElementById('dropzone');
+            const fileInput = document.getElementById('image-upload');
+
+            dropzone.addEventListener('click', () => fileInput.click());
+            dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+            dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+            dropzone.addEventListener('drop', e => {
+                e.preventDefault();
+                dropzone.classList.remove('dragover');
+                if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+            });
+
+            fileInput.addEventListener('change', e => {
+                if (e.target.files[0]) handleFile(e.target.files[0]);
+            });
+
+            document.getElementById('strength').addEventListener('input', function() {
+                document.getElementById('strength-value').textContent = this.value + '%';
+            });
+        }
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) return alert("Nur Bilddateien erlaubt!");
+            const reader = new FileReader();
+            reader.onload = e => {
+                uploadedImage = e.target.result;
+                document.getElementById('uploaded-preview').classList.remove('hidden');
+                document.getElementById('uploaded-img').src = uploadedImage;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeUploaded() {
+            uploadedImage = null;
+            document.getElementById('uploaded-preview').classList.add('hidden');
+        }
+
+        function generate() {
+            const prompt = document.getElementById('prompt').value.trim();
+            if (!prompt) {
+                alert("Bitte gib einen Prompt ein!");
+                return;
+            }
+
+            const loading = document.getElementById('loading');
+            const previewContent = document.getElementById('preview-content');
+            
+            loading.classList.remove('hidden');
+            previewContent.classList.add('hidden');
+
+            setTimeout(() => {
+                loading.classList.add('hidden');
+                previewContent.classList.remove('hidden');
+
+                const seed = Math.floor(Math.random() * 100000);
+                const imageUrl = `https://picsum.photos/id/${seed}/900/1100`;
+
+                const newImage = {
+                    url: imageUrl,
+                    prompt: prompt,
+                    time: new Date().toLocaleTimeString()
+                };
+
+                generatedImages.unshift(newImage);
+                renderGallery();
+
+                // Großes Vorschaubild rechts
+                previewContent.innerHTML = `
+                    <img src="${imageUrl}" class="max-h-[520px] rounded-3xl shadow-2xl border border-rose-500/30 generated-img">
+                    <div class="absolute bottom-8 left-8 right-8 bg-black/70 backdrop-blur-md p-5 rounded-3xl text-sm">
+                        ${prompt}
+                    </div>
+                `;
+
+            }, 1200);
+        }
+
+        function renderGallery() {
+            const container = document.getElementById('gallery');
+            container.innerHTML = '';
+
+            generatedImages.forEach(img => {
+                const div = document.createElement('div');
+                div.className = "group relative bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-700 hover:border-rose-500 cursor-pointer";
+                div.innerHTML = `
+                    <img src="${img.url}" class="w-full aspect-[4/5] object-cover">
+                    <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 p-4">
+                        <p class="text-xs line-clamp-2">${img.prompt}</p>
+                        <button onclick="event.stopImmediatePropagation(); download('${img.url}')" 
+                                class="mt-3 w-full py-2.5 bg-white/10 hover:bg-white/20 rounded-2xl text-sm">Herunterladen</button>
+                    </div>
+                `;
+                div.onclick = () => showModal(img);
+                container.appendChild(div);
+            });
+        }
+
+        function download(url) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `nsfw-${Date.now()}.jpg`;
+            a.click();
+        }
+
+        function showModal(img) {
+            const modal = document.createElement('div');
+            modal.className = "fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4";
+            modal.innerHTML = `
+                <div class="max-w-4xl w-full">
+                    <img src="${img.url}" class="rounded-3xl max-h-[80vh] mx-auto">
+                    <div class="text-center mt-6">
+                        <p class="text-zinc-300">${img.prompt}</p>
+                        <button onclick="this.closest('.fixed').remove()" class="mt-8 px-12 py-4 bg-zinc-800 rounded-3xl">Schließen</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>                            <span>Stark am Original</span>
                         </div>
                     </div>
 
